@@ -30,8 +30,8 @@ Abre la terminal de tu laboratorio de IBM y ejecuta los siguientes comandos exac
 2. **Descargar TU Código Optimizado:**
    Para proceder al despliegue real, vas a clonar tu propio repositorio (el que creamos en el Paso 1) donde tienes todo tu trabajo ya listo y mejorado:
    ```bash
-   git clone https://github.com/TU-USUARIO/CheckNBuy.git
-   cd CheckNBuy
+   git clone https://github.com/TU-USUARIO/dealer_evaluation_backend.git
+   cd dealer_evaluation_backend
    ```
 
 ### Paso 3: Desplegar Backends (Code Engine CLI)
