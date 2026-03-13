@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products price comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        td:nth-child(even), th:nth-child(even) { background-color: #D6EEEE; }
+        .container { margin: 6mm; }
+        #pricing { font-size: large; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Products price comparison</h1>
+    <div class="container" id="prod_dd"></div>
+    <div class="container" id="dealers"></div>
+    <div class="container" id="pricing"></div>
+
+    <script>
+        // REPLACE THE URLS BELOW WITH YOUR IBM CLOUD CODE ENGINE DEPLOYMENT URLS
+        let produrl = "REPLACE_WITH_PRODUCT_DETAILS_URL/";
+        let dealerurl = "REPLACE_WITH_DEALER_PRICING_URL/";
+
+        // NOTE FOR LOCAL DEV:
+        // let produrl = "http://localhost:5000/";
+        // let dealerurl = "http://localhost:8080/";
+
+        axios.get(produrl + "products").then(res => {
+            let selEl = document.createElement("select");
+            selEl.setAttribute("id", "selProd");
+            selEl.setAttribute("onChange", "getDealers()");
+            
+            let defaultOpt = document.createElement("option");
+            defaultOpt.setAttribute('value', "--SELECT--");
+            defaultOpt.innerText = "--SELECT--";
+            selEl.appendChild(defaultOpt);
+
+            res.data.products.forEach(element => {
+                let optEl = document.createElement("option");
+                optEl.setAttribute('value', element);
+                optEl.innerText = element;
+                selEl.appendChild(optEl);
+            });
+            
+            let prod = document.getElementById('prod_dd');
+            prod.innerHTML = '';
+            prod.appendChild(selEl);
+        }).catch(err => {
+            console.error("Error loading products. Ensure the Product Details microservice is running and the URL is correct.", err);
+            document.getElementById('prod_dd').innerText = "Error loading products. Is the backend URL correctly configured?";
+        });
+
+        const getDealers = () => {
+            let valToFetch = document.getElementById("selProd").value;
+            
+            // Clear subsequent fields when a new product is selected
+            document.getElementById('dealers').innerHTML = '';
+            document.getElementById("pricing").innerHTML = '';
+
+            if(valToFetch !== "--SELECT--") {
+                axios.get(produrl + "getdealers/" + valToFetch).then(res => {
+                    let selEl = document.createElement("select");
+                    selEl.setAttribute("id", "selDealer");
+                    selEl.setAttribute("onChange", "getDealerProductPrice()");
+                    
+                    let defaultOpt = document.createElement("option");
+                    defaultOpt.setAttribute('value', "--SELECT--");
+                    defaultOpt.innerText = "--SELECT--";
+                    selEl.appendChild(defaultOpt);
+                    
+                    res.data.dealers.forEach((element) => {
+                        let optEl = document.createElement("option");
+                        optEl.setAttribute('value', element);
+                        optEl.innerText = element;
+                        selEl.appendChild(optEl);
+                    });
+                    
+                    let allOpt = document.createElement("option");
+                    allOpt.setAttribute('value', 'All Dealers');
+                    allOpt.innerText = 'All Dealers';
+                    selEl.appendChild(allOpt);
+
+                    let dealers = document.getElementById('dealers');
+                    dealers.innerHTML = '';
+                    dealers.appendChild(selEl);
+                }).catch(err => {
+                    console.error("Error fetching dealers", err);
+                    document.getElementById('dealers').innerText = "Error loading dealers.";
+                });
+            }
+        };
+
+        const getDealerProductPrice = () => {
+            let prodvalToFetch = document.getElementById("selProd").value;
+            let dealervalToFetch = document.getElementById("selDealer").value;
+            let pricingEl = document.getElementById("pricing");
+            
+            pricingEl.innerHTML = '';
+
+            if (dealervalToFetch !== "--SELECT--") {
+                if (dealervalToFetch !== 'All Dealers') {
+                    axios.get(dealerurl + "price/" + dealervalToFetch + "/" + prodvalToFetch).then(res => {
+                        pricingEl.innerText = res.data.message;
+                    }).catch(err => {
+                        console.error("Error fetching pricing", err);
+                        pricingEl.innerText = "Error loading pricing.";
+                    });
+                } else {
+                    axios.get(dealerurl + "allprice/" + prodvalToFetch).then(res => {
+                        let table = document.createElement("table");
+                        res.data.prices.forEach((price) => {
+                            let tr = document.createElement("tr");
+                            tr.innerHTML = `<td>${price.key}</td><td>${price.value}</td>`;
+                            table.appendChild(tr);
+                        });
+                        if (table.hasChildNodes()) {
+                            pricingEl.appendChild(table);
+                        }
+                    }).catch(err => {
+                        console.error("Error fetching all prices", err);
+                        pricingEl.innerText = "Error loading prices.";
+                    });
+                }
+            }
+        };
+    </script>
+</body>
+</html>
